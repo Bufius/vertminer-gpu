@@ -804,7 +804,6 @@ void scrypt_core(uint4 X[8], __global uint4*restrict lookup)
   i = 0;
   do
 	{
-		//j = X[7].x & K[85];
 #if (LOOKUP_GAP == 2)		
 		y = ((X[7].x & K[85])>>1);
 #else
@@ -819,7 +818,7 @@ void scrypt_core(uint4 X[8], __global uint4*restrict lookup)
 		if (X[7].x&1)
 		  salsa(V);
 #elif (LOOKUP_GAP > 2)
-		uint val = j%LOOKUP_GAP;
+		uint val = (X[7].x & K[85])%LOOKUP_GAP;
 #pragma unroll    
 		for (z=0; z<val; ++z) 
 			salsa(V);
