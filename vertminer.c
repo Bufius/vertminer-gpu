@@ -1370,9 +1370,9 @@ static struct opt_table opt_config_table[] = {
 		     set_schedtime, NULL, &schedstop,
 		     "Set a time of day in HH:MM to stop mining (will quit without a start time)"),
 #ifdef USE_SCRYPT
-	OPT_WITHOUT_ARG("--scrypt",
+	OPT_WITHOUT_ARG("--scrypt-vert",
 			opt_set_bool, &opt_scrypt,
-			"Use the scrypt algorithm for mining (litecoin only)"),
+			"Use the scrypt-vert algorithm for mining (vertcoin only)"),
 	OPT_WITH_ARG("--shaders",
 		     set_shaders, NULL, NULL,
 		     "GPU shaders per card for tuning scrypt, comma separated"),
