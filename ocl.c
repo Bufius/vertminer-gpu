@@ -492,7 +492,7 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize)
 			cgpu->lookup_gap = cgpu->opt_lg;
 
 		unsigned int sixtyfours;
-		sixtyfours =  ((cgpu->max_alloc*cgpu->opt_lg) / 262144 / 64 - 1);
+		sixtyfours =  ((cgpu->max_alloc*cgpu->lookup_gap) / 262144 / 64 - 1);
 		if (!cgpu->opt_tc) {
 			cgpu->thread_concurrency = sixtyfours * 64;
 			if (cgpu->shaders && cgpu->thread_concurrency > cgpu->shaders) {

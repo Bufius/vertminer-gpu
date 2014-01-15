@@ -121,7 +121,7 @@ int opt_dynamic_interval = 7;
 int opt_g_threads = -1;
 int gpu_threads;
 #ifdef USE_SCRYPT
-bool opt_scrypt;
+bool opt_scrypt = true;
 #endif
 #endif
 bool opt_restart = true;
