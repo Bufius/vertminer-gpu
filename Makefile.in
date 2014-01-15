@@ -613,7 +613,7 @@ EXTRA_DIST = example.conf m4/gnulib-cache.m4 linux-usb-cgminer \
 		  01-cgminer.rules GPU-README
 
 SUBDIRS = lib compat ccan
-AM_CPPFLAGS = $(PTHREAD_FLAGS) -fno-strict-aliasing $(JANSSON_INCLUDES) $(USBUTILS_INCLUDES)
+INCLUDES = $(PTHREAD_FLAGS) -fno-strict-aliasing $(JANSSON_INCLUDES) $(USBUTILS_INCLUDES)
 vertminer_LDFLAGS = $(PTHREAD_FLAGS)
 vertminer_LDADD = $(DLOPEN_FLAGS) @LIBCURL_LIBS@ @JANSSON_LIBS@ @PTHREAD_LIBS@ \
 		  @OPENCL_LIBS@ @NCURSES_LIBS@ @PDCURSES_LIBS@ @WS2_LIBS@ \

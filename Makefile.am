@@ -18,7 +18,7 @@ EXTRA_DIST	= example.conf m4/gnulib-cache.m4 linux-usb-cgminer \
 
 SUBDIRS		= lib compat ccan
 
-AM_CPPFLAGS	= $(PTHREAD_FLAGS) -fno-strict-aliasing $(JANSSON_INCLUDES) $(USBUTILS_INCLUDES)
+INCLUDES	= $(PTHREAD_FLAGS) -fno-strict-aliasing $(JANSSON_INCLUDES) $(USBUTILS_INCLUDES)
 
 bin_PROGRAMS	= vertminer
 
