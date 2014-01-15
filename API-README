@@ -935,7 +935,7 @@ The basic cgminer option to enable the API is:
 
  --api-listen
 
-or in your cgminer.conf
+or in your vertminer.conf
 
  "api-listen" : true,
 
@@ -956,7 +956,7 @@ would add the following to cgminer:
 
  --api-listen --api-allow a.b.c.d
 
-or in your cgminer.conf
+or in your vertminer.conf
 
  "api-listen" : true,
  "api-allow" : "a.b.c.d",
@@ -983,7 +983,7 @@ Add the following to each cgminer:
 
  --api-mcast
 
-or in your cgminer.conf
+or in your vertminer.conf
 
  "api-mcast" : true,
 

@@ -4307,7 +4307,7 @@ failing on that device. This should fix the windows problems with devices not
 initialising.
 - Support new configuration file format courtesy of Chris Savery which can write
 the config file from the menu and will load it on startup.
-- Write unix configuration to .cgminer/cgminer.conf by default and prompt to
+- Write unix configuration to .vertminer/vertminer.conf by default and prompt to
 overwrite if given a filename from the menu that exists.
 
 
