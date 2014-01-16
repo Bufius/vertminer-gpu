@@ -144,7 +144,7 @@ bool use_curses = true;
 #else
 bool use_curses;
 #endif
-static bool opt_submit_stale = true;
+static bool opt_submit_stale = false;
 static int opt_shares;
 bool opt_fail_only;
 static bool opt_fix_protocol;
@@ -1318,9 +1318,9 @@ static struct opt_table opt_config_table[] = {
 			opt_hidden
 #endif
 	),
-	OPT_WITHOUT_ARG("--no-submit-stale",
-			opt_set_invbool, &opt_submit_stale,
-		        "Don't submit shares if they are detected as stale"),
+	OPT_WITHOUT_ARG("--submit-stale",
+			opt_set_bool, &opt_submit_stale,
+		        "submit shares if they are detected as stale - not recommended"),
 	OPT_WITH_ARG("--pass|-p",
 		     set_pass, NULL, NULL,
 		     "Password for bitcoin JSON-RPC server"),

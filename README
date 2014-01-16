@@ -177,7 +177,7 @@ Options for both config file and command line:
 --lowmem            Minimise caching of shares for low memory applications
 --monitor|-m <arg>  Use custom pipe cmd for output messages
 --net-delay         Impose small delays in networking to not overload slow routers
---no-submit-stale   Don't submit shares if they are detected as stale
+--submit-stale      submit shares if they are detected as stale - not recommended!
 --pass|-p <arg>     Password for bitcoin JSON-RPC server
 --per-device-stats  Force verbose mode and output per-device statistics
 --protocol-dump|-P  Verbose dump of protocol-level activities
