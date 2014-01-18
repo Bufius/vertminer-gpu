@@ -1418,7 +1418,7 @@ static struct opt_table opt_config_table[] = {
 #endif
 	),
 #ifdef USE_SCRYPT
-	OPT_WITH_ARG("--thread-concurrency-vert",
+	OPT_WITH_ARG("--thread-concurrency",
 		     set_thread_concurrency, NULL, NULL,
 		     "Set GPU thread concurrency for scrypt-vert mining, comma separated"),
 #endif
@@ -4489,7 +4489,7 @@ void write_config(FILE *fcfg)
 		for(i = 0; i < nDevs; i++)
 			fprintf(fcfg, "%s%d", i > 0 ? "," : "",
 				(int)gpus[i].opt_lg);
-		fputs("\",\n\"thread-concurrency-vert\" : \"", fcfg);
+		fputs("\",\n\"thread-concurrency\" : \"", fcfg);
 		for(i = 0; i < nDevs; i++)
 			fprintf(fcfg, "%s%d", i > 0 ? "," : "",
 				(int)gpus[i].opt_tc);
