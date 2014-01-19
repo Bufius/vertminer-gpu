@@ -1353,7 +1353,7 @@ struct pool {
 	char *nonce1;
 	unsigned char *nonce1bin;
 	size_t n1_len;
-	uint32_t nonce2;
+	uint64_t nonce2;
 	int n2size;
 	char *sessionid;
 	bool has_stratum;
@@ -1432,7 +1432,7 @@ struct work {
 
 	bool		stratum;
 	char 		*job_id;
-	uint32_t	nonce2;
+	uint64_t	nonce2;
 	size_t		nonce2_len;
 	char		*ntime;
 	double		sdiff;
