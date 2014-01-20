@@ -17384,7 +17384,7 @@ _ACEOF
 
 
 cat >>confdefs.h <<_ACEOF
-#define SCRYPT_KERNNAME "scrypt140110"
+#define SCRYPT_KERNNAME "scrypt140120"
 _ACEOF
 
 
