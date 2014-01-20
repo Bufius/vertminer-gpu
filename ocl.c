@@ -492,28 +492,24 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize)
 			cgpu->lookup_gap = cgpu->opt_lg;
 
 		unsigned int sixtyfours;
-		sixtyfours =  ((cgpu->max_alloc*cgpu->lookup_gap) / (2048*128) / cgpu->work_size - 1);
-		//printf("-----------------------------> cgpe->max_alloc: %lu\n",cgpu->max_alloc);
-		//printf("-----------------------------> sixtyfours: %d\n",sixtyfours);
+		sixtyfours =  ((cgpu->max_alloc*cgpu->lookup_gap) / (2048*128) / 64 - 1);
+		applog(LOG_INFO,"----------> cgpu->max_alloc: %lu",cgpu->max_alloc);
+		applog(LOG_INFO,"----------> sixtyfours: %d",sixtyfours);
+		applog(LOG_INFO,"----------> cgpu->shaders: %zu",cgpu->shaders);
 		if (!cgpu->opt_tc) {
-			cgpu->thread_concurrency = sixtyfours * cgpu->work_size;
+			cgpu->thread_concurrency = sixtyfours * 64;
 			if (cgpu->shaders && cgpu->thread_concurrency > cgpu->shaders) {
 				cgpu->thread_concurrency -= cgpu->thread_concurrency % cgpu->shaders;
 				if (cgpu->thread_concurrency > cgpu->shaders * 5)
 					cgpu->thread_concurrency = cgpu->shaders * 5;
 			}
-			applog(LOG_DEBUG, "GPU %d: selecting thread concurrency of %d", gpu, (int)(cgpu->thread_concurrency));
+			applog(LOG_INFO, "GPU %d: selecting thread concurrency of %d", gpu, (int)(cgpu->thread_concurrency));
 		} else {
 			if (((cgpu->opt_tc * (2048*128)) / cgpu->lookup_gap) > cgpu->max_alloc) {
-				cgpu->thread_concurrency = sixtyfours * cgpu->work_size;
-				if (cgpu->shaders && cgpu->thread_concurrency > cgpu->shaders) {
-					cgpu->thread_concurrency -= cgpu->thread_concurrency % cgpu->shaders;
-					if (cgpu->thread_concurrency > cgpu->shaders * 5)
-						cgpu->thread_concurrency = cgpu->shaders * 5;				
-				}
-				applog(LOG_DEBUG, "GPU %d: thread concurrency ott high, set to %d", gpu, (int)(cgpu->thread_concurrency));
+				cgpu->thread_concurrency = sixtyfours * 64;
+				applog(LOG_INFO, "GPU %d: thread concurrency too high, set to %d", gpu, (int)(cgpu->thread_concurrency));
 			} else {
-				cgpu->thread_concurrency = cgpu->opt_tc-(cgpu->opt_tc%cgpu->work_size);
+				cgpu->thread_concurrency = cgpu->opt_tc-(cgpu->opt_tc%64);
 			}
 		}
 	}

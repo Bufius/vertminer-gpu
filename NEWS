@@ -1,3 +1,9 @@
+Version 0.5.1 - 20th January 2014
+- reenabled gpu-thread setting (not recommended, HW errors!)
+- TC calculation changed (padding to 64 again instead of worksize)
+- more output with --verbose
+
+
 Version 0.5.0 - 17th January 2014
 - fixed gpu-threads to 1
 - changed automatic TC calcution
