@@ -1,6 +1,12 @@
+Version 0.5.2 - 21th January 2014
+- reenabled optimized opencl kernel
+- prepared opencl kernel for adaptive nFactor
+
+
 Version 0.5.1 - 20th January 2014
 - reenabled gpu-thread setting (not recommended, HW errors!)
 - TC calculation changed (padding to 64 again instead of worksize)
+- reverted scrypt opencl kernel to original cgminer version
 - more output with --verbose
 
 

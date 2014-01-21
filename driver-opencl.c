@@ -1074,6 +1074,7 @@ static cl_int queue_scrypt_kernel(_clState *clState, dev_blk_ctx *blk, __maybe_u
 	unsigned int num = 0;
 	cl_uint le_target;
 	cl_int status = 0;
+	unsigned int nFactor = 2048;
 
 	le_target = *(cl_uint *)(blk->work->device_target + 28);
 	clState->cldata = blk->work->data;
@@ -1085,6 +1086,7 @@ static cl_int queue_scrypt_kernel(_clState *clState, dev_blk_ctx *blk, __maybe_u
 	CL_SET_VARG(4, &midstate[0]);
 	CL_SET_VARG(4, &midstate[16]);
 	CL_SET_ARG(le_target);
+	CL_SET_ARG(nFactor);
 
 	return status;
 }
