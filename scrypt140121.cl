@@ -767,7 +767,7 @@ void salsa_double(uint4 B[8])
 #define Coord(y,z) z + ((coor ## SIZE).w << (coor ## SIZE).z) + y * ((coor ## SIZE).x << (coor ## SIZE).z)
 #define CO Coord(y,z)
 
-void scrypt_core(uint4 X[8], __global uint4*restrict lookup, const uint nFactor)
+void scrypt_core(uint4 X[8], __global uint4*restrict lookup)
 {
   /*
 	const uint zSIZE = 8;
@@ -776,7 +776,7 @@ void scrypt_core(uint4 X[8], __global uint4*restrict lookup, const uint nFactor)
 	uint x = get_global_id(0)%xSIZE;
 	*/
 	
-	const uint4 coorSIZE = (uint4)(CONCURRENT_THREADS, (nFactor/LOOKUP_GAP+(nFactor%LOOKUP_GAP>0)), 3, 
+	const uint4 coorSIZE = (uint4)(CONCURRENT_THREADS, (nFACT/LOOKUP_GAP+(nFACT%LOOKUP_GAP>0)), 3, 
 (get_global_id(0)%CONCURRENT_THREADS));	
   uint4 V[8];
   uint i=0, y=0, z=0;  
@@ -801,12 +801,12 @@ void scrypt_core(uint4 X[8], __global uint4*restrict lookup, const uint nFactor)
 	
 #if (LOOKUP_GAP != 1) && (LOOKUP_GAP != 2) && (LOOKUP_GAP != 4) && (LOOKUP_GAP != 8)
 	{
-    y = (nFactor/LOOKUP_GAP);
+    y = (nFACT/LOOKUP_GAP);
 #pragma unroll 8
 		for(z=0; z<(1<<coorSIZE.z); ++z)
 			lookup[CO] = X[tmp.z];
 #pragma unroll
-		for(i=0; i<nFactor%LOOKUP_GAP; ++i)
+		for(i=0; i<nFACT%LOOKUP_GAP; ++i)
 			salsa(X); 
 	}
 #endif
@@ -815,9 +815,9 @@ void scrypt_core(uint4 X[8], __global uint4*restrict lookup, const uint nFactor)
   do
 	{
 #if (LOOKUP_GAP == 2)		
-		y = ((X[7].x & (nFactor-1))>>1);
+		y = ((X[7].x & (nFACT-1))>>1);
 #else
-    y = ((X[7].x & (nFactor-1))/LOOKUP_GAP);
+    y = ((X[7].x & (nFACT-1))/LOOKUP_GAP);
 #endif
 
 #pragma unroll 8
@@ -828,7 +828,7 @@ void scrypt_core(uint4 X[8], __global uint4*restrict lookup, const uint nFactor)
 		if (X[7].x&1)
 		  salsa(V);
 #elif (LOOKUP_GAP > 2)
-		uint val = (X[7].x & (nFactor-1))%LOOKUP_GAP;
+		uint val = (X[7].x & (nFACT-1))%LOOKUP_GAP;
 #pragma unroll    
 		for (z=0; z<val; ++z) 
 			salsa(V);
@@ -838,7 +838,7 @@ void scrypt_core(uint4 X[8], __global uint4*restrict lookup, const uint nFactor)
 		for(z=0; z<(1<<coorSIZE.z); ++z)
 			X[z] ^= V[z];
 		salsa(X);
-	} while (++i < nFactor);
+	} while (++i < nFACT);
 	
 	unshittify(X);
 }
@@ -876,7 +876,7 @@ const uint4 midstate0, const uint4 midstate16, const uint target, const uint nFa
 		SHA256(&pad0,&pad1, data, (uint4)(i+1,K[84],0,0), (uint4)(0,0,0,0), (uint4)(0,0,0, K[87]));
 		SHA256(X+(i<<1),X+(i<<1)+1, pad0, pad1, (uint4)(K[84], 0U, 0U, 0U), (uint4)(0U, 0U, 0U, K[88]));
   }
-	scrypt_core(X,padcache, nFactor);
+	scrypt_core(X,padcache);
 	SHA256(&tmp0,&tmp1, X[0], X[1], X[2], X[3]);
 	SHA256(&tmp0,&tmp1, X[4], X[5], X[6], X[7]);
 	SHA256_fixed(&tmp0,&tmp1);
