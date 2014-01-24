@@ -957,7 +957,7 @@ const uint4 midstate0, const uint4 midstate16, const uint target, const uint nFa
 		SHA256(&pad0, &pad1, data, (uint4)(i+1,K[84],0,0), (uint4)(0,0,0,0), (uint4)(0,0,0, K[87]));
 		SHA256(X+(i<<1), X+(i<<1)+1, pad0, pad1, (uint4)(K[84], 0U, 0U, 0U), (uint4)(0U, 0U, 0U, K[88]));
 	}
-	scrypt_core(gid, X, padcache, nFactor);
+	scrypt_core(gid, X, padcache, 11);
 	SHA256(&tmp0,&tmp1, X[0], X[1], X[2], X[3]);
 	SHA256(&tmp0,&tmp1, X[4], X[5], X[6], X[7]);
 	SHA256_fixed(&tmp0, &tmp1);
