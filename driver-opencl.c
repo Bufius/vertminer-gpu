@@ -1074,7 +1074,7 @@ static cl_int queue_scrypt_kernel(_clState *clState, dev_blk_ctx *blk, __maybe_u
 	unsigned int num = 0;
 	cl_uint le_target;
 	cl_int status = 0;
-	unsigned int nFactor = 2048;
+	unsigned int nFactor = 11;
 
 	le_target = *(cl_uint *)(blk->work->device_target + 28);
 	clState->cldata = blk->work->data;
