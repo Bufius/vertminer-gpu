@@ -505,7 +505,7 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize)
 			}
 			applog(LOG_INFO, "GPU %d: selecting thread concurrency of %d", gpu, (int)(cgpu->thread_concurrency));
 		} else {
-			cgpu->thread_concurrency = cgpu->opt_tc-(cgpu->opt_tc%64);
+			cgpu->thread_concurrency = cgpu->opt_tc;
 		}
 
 		if (((cgpu->thread_concurrency * (2048*128)) / cgpu->lookup_gap) > cgpu->max_alloc) {
