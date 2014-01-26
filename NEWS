@@ -1,3 +1,12 @@
+Version 0.5.3 - 26 January 2014 ALPHA!!!
+- changed automatic TC calculation
+- increased max intensity to 21
+- shaders are now used for intensity calculation
+  --> if option shaders is set, intensity calculation tries to pad to shaders count (can increase performance but also decrease)
+  --> of not shaders set, old cgminer intensity calculation is used
+- even more optimization to opencl kernel
+
+
 Version 0.5.2 - 21th January 2014
 - reenabled optimized opencl kernel
 - prepared opencl kernel for adaptive nFactor

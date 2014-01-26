@@ -500,17 +500,17 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize)
 			cgpu->thread_concurrency = sixtyfours * 64;
 			if (cgpu->shaders && cgpu->thread_concurrency > cgpu->shaders) {
 				cgpu->thread_concurrency -= cgpu->thread_concurrency % cgpu->shaders;
-				if (cgpu->thread_concurrency > cgpu->shaders * 5)
-					cgpu->thread_concurrency = cgpu->shaders * 5;
+				if (cgpu->thread_concurrency > cgpu->shaders * 11)
+					cgpu->thread_concurrency = cgpu->shaders * 11;
 			}
 			applog(LOG_INFO, "GPU %d: selecting thread concurrency of %d", gpu, (int)(cgpu->thread_concurrency));
 		} else {
-			if (((cgpu->opt_tc * (2048*128)) / cgpu->lookup_gap) > cgpu->max_alloc) {
-				cgpu->thread_concurrency = sixtyfours * 64;
-				applog(LOG_INFO, "GPU %d: thread concurrency too high, set to %d", gpu, (int)(cgpu->thread_concurrency));
-			} else {
-				cgpu->thread_concurrency = cgpu->opt_tc-(cgpu->opt_tc%64);
-			}
+			cgpu->thread_concurrency = cgpu->opt_tc-(cgpu->opt_tc%64);
+		}
+
+		if (((cgpu->thread_concurrency * (2048*128)) / cgpu->lookup_gap) > cgpu->max_alloc) {
+			cgpu->thread_concurrency = sixtyfours * 64;
+			applog(LOG_INFO, "GPU %d: thread concurrency too high, set to %d", gpu, (int)(cgpu->thread_concurrency));
 		}
 	}
 #endif

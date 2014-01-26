@@ -1074,7 +1074,7 @@ static cl_int queue_scrypt_kernel(_clState *clState, dev_blk_ctx *blk, __maybe_u
 	unsigned int num = 0;
 	cl_uint le_target;
 	cl_int status = 0;
-	unsigned int nFactor = 11;
+	unsigned int nFactor = 2048;
 
 	le_target = *(cl_uint *)(blk->work->device_target + 28);
 	clState->cldata = blk->work->data;
@@ -1093,19 +1093,36 @@ static cl_int queue_scrypt_kernel(_clState *clState, dev_blk_ctx *blk, __maybe_u
 #endif
 
 static void set_threads_hashes(unsigned int vectors,int64_t *hashes, size_t *globalThreads,
-			       unsigned int minthreads, __maybe_unused int *intensity)
+			       unsigned int minthreads, __maybe_unused int *intensity, __maybe_unused size_t *shaders)
 {
 	unsigned int threads = 0;
 
-	while (threads < minthreads) {
-		threads = 1 << ((opt_scrypt ? 0 : 15) + *intensity);
-		if (threads < minthreads) {
-			if (likely(*intensity < MAX_INTENSITY))
-				(*intensity)++;
-			else
-				threads = minthreads;
+	applog(LOG_DEBUG, "++++++ minthreads: %u; -- intensity: %u", minthreads, *intensity);
+	
+	if (*shaders) {
+		// new intensity calculation based on shader count
+		applog(LOG_DEBUG, "+++++ using NEW intensity calculation :)");
+		// intensity 19 == shaders * minthreads
+		threads = (*shaders * minthreads << (MAX_INTENSITY-19)) >> (MAX_INTENSITY - *intensity);
+
+		if (threads < minthreads)
+			threads = minthreads;
+		else if (threads % minthreads)
+			threads += minthreads - (threads % minthreads);
+	} else {
+		// use old cgminer style
+		applog(LOG_DEBUG, "+++++ using OLD intensity calculation based on original cgminer");
+		while (threads < minthreads) {
+			threads = 1 << ((opt_scrypt ? 0 : 15) + *intensity);
+			if (threads < minthreads) {
+				if (likely(*intensity < MAX_INTENSITY))
+					(*intensity)++;
+				else
+					threads = minthreads;
+			}
 		}
 	}
+	applog(LOG_INFO, "+++++ setting globalThreads to %u",threads);
 
 	*globalThreads = threads;
 	*hashes = threads * vectors;
@@ -1505,7 +1522,7 @@ static int64_t opencl_scanhash(struct thr_info *thr, struct work *work,
 		gpu->intervals = 0;
 	}
 
-	set_threads_hashes(clState->vwidth, &hashes, globalThreads, localThreads[0], &gpu->intensity);
+	set_threads_hashes(clState->vwidth, &hashes, globalThreads, localThreads[0], &gpu->intensity, &gpu->shaders);
 	if (hashes > gpu->max_hashes)
 		gpu->max_hashes = hashes;
 
