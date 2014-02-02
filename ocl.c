@@ -493,9 +493,9 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize)
 
 		unsigned int sixtyfours;
 		sixtyfours =  ((cgpu->max_alloc*cgpu->lookup_gap) / (2048*128) / 64 - 1);
-		applog(LOG_INFO,"----------> cgpu->max_alloc: %lu",cgpu->max_alloc);
-		applog(LOG_INFO,"----------> sixtyfours: %d",sixtyfours);
-		applog(LOG_INFO,"----------> cgpu->shaders: %zu",cgpu->shaders);
+		applog(LOG_DEBUG,"----------> cgpu->max_alloc: %lu",cgpu->max_alloc);
+		applog(LOG_DEBUG,"----------> sixtyfours: %d",sixtyfours);
+		applog(LOG_DEBUG,"----------> cgpu->shaders: %zu",cgpu->shaders);
 		if (!cgpu->opt_tc) {
 			cgpu->thread_concurrency = sixtyfours * 64;
 			if (cgpu->shaders && cgpu->thread_concurrency > cgpu->shaders) {

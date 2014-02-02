@@ -2692,33 +2692,33 @@ bool cg_completion_timeout(void *fn, void *fnarg, int timeout)
 
 const unsigned char minNfactor = 10;
 const unsigned char maxNfactor = 30;
+const unsigned int vert_nChainStartTime = 1389306217;
 
-unsigned char GetNfactor(long nTimestamp) {
-    int l, n;
-    long s;
+unsigned char vert_GetNfactor(const uint32_t nTimestamp) {
+    uint32_t l, n, s;
 
     l = 0;
 
-    if (nTimestamp <= 1389306217) {
+    if (nTimestamp <= vert_nChainStartTime) {
         return minNfactor;
-   }
+    }
 
-    s = nTimestamp - 1389306217;
+    s = nTimestamp - vert_nChainStartTime;
     while ((s >> 1) > 3) {
       l += 1;
       s >>= 1;
     }
 
     s &= 3;
+    n = (l * 158 + s * 28 - 2670) / 100;
 
-    n = (l * 150 + s * 25 - 2320) / 100;
-
-    if (n < 0) n = 0;
+    if (n < 0) 
+      n = 0;
 
     if (n > 255)
         printf( "GetNfactor(%ld) - something wrong(n == %d)\n", nTimestamp, n );
 
-    unsigned char N = (unsigned char) n;
+    unsigned char N = ((unsigned char) n);
     //printf("GetNfactor: %d -> %d %d : %d / %d\n", nTimestamp - nChainStartTime, l, s, n, min(max(N, minNfactor), maxNfactor));
 
     if (N < minNfactor) {
@@ -2730,3 +2730,4 @@ unsigned char GetNfactor(long nTimestamp) {
     return N;
     //return min(max(N, minNfactor), maxNfactor);
 }
+

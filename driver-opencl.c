@@ -1074,10 +1074,18 @@ static cl_int queue_scrypt_kernel(_clState *clState, dev_blk_ctx *blk, __maybe_u
 	unsigned int num = 0;
 	cl_uint le_target;
 	cl_int status = 0;
-	unsigned int nFactor = 2048;
+	uint32_t timestamp;
+	cl_uint nfactor = 10;    // scrypt default
+ 	
+	//if (opt_scrypt_vert) {
+		timestamp = bswap_32(*((uint32_t *)(blk->work->data + 17*4)));
+ 		nfactor = vert_GetNfactor(timestamp) + 1;
+	//}	
 
 	le_target = *(cl_uint *)(blk->work->device_target + 28);
 	clState->cldata = blk->work->data;
+	applog(LOG_DEBUG, "Timestamp: %d, Nfactor: %d, Target: %x", timestamp, nfactor, le_target);
+  	
 	status = clEnqueueWriteBuffer(clState->commandQueue, clState->CLbuffer0, true, 0, 80, clState->cldata, 0, NULL,NULL);
 
 	CL_SET_ARG(clState->CLbuffer0);
@@ -1086,7 +1094,7 @@ static cl_int queue_scrypt_kernel(_clState *clState, dev_blk_ctx *blk, __maybe_u
 	CL_SET_VARG(4, &midstate[0]);
 	CL_SET_VARG(4, &midstate[16]);
 	CL_SET_ARG(le_target);
-	CL_SET_ARG(nFactor);
+	CL_SET_ARG(nfactor);
 
 	return status;
 }
@@ -1096,12 +1104,9 @@ static void set_threads_hashes(unsigned int vectors,int64_t *hashes, size_t *glo
 			       unsigned int minthreads, __maybe_unused int *intensity, __maybe_unused size_t *shaders)
 {
 	unsigned int threads = 0;
-
-	applog(LOG_DEBUG, "++++++ minthreads: %u; -- intensity: %u", minthreads, *intensity);
 	
 	if (*shaders) {
 		// new intensity calculation based on shader count
-		applog(LOG_DEBUG, "+++++ using NEW intensity calculation :)");
 		// intensity 19 == shaders * minthreads
 		threads = (*shaders * minthreads << (MAX_INTENSITY-19)) >> (MAX_INTENSITY - *intensity);
 
@@ -1111,7 +1116,6 @@ static void set_threads_hashes(unsigned int vectors,int64_t *hashes, size_t *glo
 			threads += minthreads - (threads % minthreads);
 	} else {
 		// use old cgminer style
-		applog(LOG_DEBUG, "+++++ using OLD intensity calculation based on original cgminer");
 		while (threads < minthreads) {
 			threads = 1 << ((opt_scrypt ? 0 : 15) + *intensity);
 			if (threads < minthreads) {
@@ -1122,7 +1126,7 @@ static void set_threads_hashes(unsigned int vectors,int64_t *hashes, size_t *glo
 			}
 		}
 	}
-	applog(LOG_INFO, "+++++ setting globalThreads to %u",threads);
+	applog(LOG_INFO, "set globalThreads to %u",threads);
 
 	*globalThreads = threads;
 	*hashes = threads * vectors;
