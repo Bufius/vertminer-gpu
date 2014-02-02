@@ -960,30 +960,15 @@ const uint4 midstate0, const uint4 midstate16, const uint target, const uint nFa
 	
 	// workaround for fast computation
 	switch (nFactor) {
-    case 11:
-      scrypt_core(gid, X, padcache, 11);
-      break;
-    case 12:
-      scrypt_core(gid, X, padcache, 12);
-      break;
-    case 13:
-      scrypt_core(gid, X, padcache, 13);
-      break;
-    case 14:
-      scrypt_core(gid, X, padcache, 14);
-      break;
-    case 15:
-      scrypt_core(gid, X, padcache, 14);
-      break;
-    case 16:
-      scrypt_core(gid, X, padcache, 14);
-      break;
-    case 17:
-      scrypt_core(gid, X, padcache, 14);
-      break;                  
-    default:
-      scrypt_core(gid, X, padcache, 10);
-      break;          
+	case 10:
+		scrypt_core(gid, X, padcache, 10);
+		break;
+	case 11:
+		scrypt_core(gid, X, padcache, 11);
+		break;
+	case 12:
+		scrypt_core(gid, X, padcache, 12);
+		break;
 	}
 
 	SHA256(&tmp0,&tmp1, X[0], X[1], X[2], X[3]);
