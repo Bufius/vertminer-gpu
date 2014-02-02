@@ -2694,8 +2694,9 @@ const unsigned char minNfactor = 10;
 const unsigned char maxNfactor = 30;
 const unsigned int vert_nChainStartTime = 1389306217;
 
-unsigned char vert_GetNfactor(const uint32_t nTimestamp) {
-    uint32_t l, n, s;
+unsigned char vert_GetNfactor(const long int nTimestamp) {
+    int l, n;
+    long int s;
 
     l = 0;
 

@@ -140,7 +140,7 @@ void _cgsem_wait(cgsem_t *cgsem, const char *file, const char *func, const int l
 int _cgsem_mswait(cgsem_t *cgsem, int ms, const char *file, const char *func, const int line);
 void cgsem_destroy(cgsem_t *cgsem);
 bool cg_completion_timeout(void *fn, void *fnarg, int timeout);
-unsigned char GetNfactor(const uint32_t nTimestamp);
+unsigned char GetNfactor(const long int nTimestamp);
 
 #define cgsem_init(_sem) _cgsem_init(_sem, __FILE__, __func__, __LINE__)
 #define cgsem_post(_sem) _cgsem_post(_sem, __FILE__, __func__, __LINE__)
