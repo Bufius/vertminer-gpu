@@ -1,11 +1,11 @@
-Version 0.5.3 - 2 February 2014 BETA!!!
+Version 0.5.3 - 2 February 2014
 - changed automatic TC calculation
 - increased max intensity to 21
 - shaders are now used for intensity calculation
-  --> if option shaders is set, intensity calculation tries to pad to shaders count (can increase performance but also decrease)
-  --> of not shaders set, old cgminer intensity calculation is used
+  --> option shaders is set: intensity calculation tries to align to shaders count (can increase performance but also decrease with low intensity)
+  --> shaders NOT set: old cgminer intensity calculation is used
 - opencl changed to keep speed with adaptive nfactor
-- introduced first time dependent nfactor changes in code (not finally done yet)
+- introduced first time dependent nfactor changes in code and opencl kernel (not finally done yet)
 - fix for ADL with R9 cards
 
 
