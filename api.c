@@ -1963,6 +1963,20 @@ static const char *status2str(enum alive status)
 }
 #endif
 
+static void calculate_mhash_api_return(double displayed_rolling, double displayed_total, char * mhsavg, char * mhsname)
+{
+	bool mhash_base = true;
+
+	if (displayed_rolling < 1) {
+		displayed_rolling *= 1000;
+		displayed_total *= 1000;
+		mhash_base = false;
+	}
+
+	sprintf(mhsavg, "%sHS av", mhash_base ? "M":"K");
+	sprintf(mhsname, "%sHS %ds", mhash_base ? "M":"K", opt_log_interval);
+}
+
 #ifdef HAVE_OPENCL
 static void gpustatus(struct io_data *io_data, int gpu, bool isjson, bool precom)
 {
@@ -1996,6 +2010,12 @@ static void gpustatus(struct io_data *io_data, int gpu, bool isjson, bool precom
 		else
 			sprintf(intensity, "%d", cgpu->intensity);
 
+
+		char mhsavg[10], mhsname[27];
+		double displayed_total = cgpu->total_mhashes / total_secs;
+		double displayed_rolling = cgpu->rolling;
+		calculate_mhash_api_return(displayed_rolling, displayed_total, mhsavg, mhsname);
+
 		root = api_add_int(root, "GPU", &gpu, false);
 		root = api_add_string(root, "Enabled", enabled, false);
 		root = api_add_string(root, "Status", status, false);
@@ -2007,11 +2027,8 @@ static void gpustatus(struct io_data *io_data, int gpu, bool isjson, bool precom
 		root = api_add_volts(root, "GPU Voltage", &gv, false);
 		root = api_add_int(root, "GPU Activity", &ga, false);
 		root = api_add_int(root, "Powertune", &pt, false);
-		double mhs = cgpu->total_mhashes / total_secs;
-		root = api_add_mhs(root, "MHS av", &mhs, false);
-		char mhsname[27];
-		sprintf(mhsname, "MHS %ds", opt_log_interval);
-		root = api_add_mhs(root, mhsname, &(cgpu->rolling), false);
+		root = api_add_mhs(root, mhsavg, &displayed_total, false);
+		root = api_add_mhs(root, mhsname, &displayed_rolling, false);
 		root = api_add_int(root, "Accepted", &(cgpu->accepted), false);
 		root = api_add_int(root, "Rejected", &(cgpu->rejected), false);
 		root = api_add_int(root, "Hardware Errors", &(cgpu->hw_errors), false);
@@ -2079,17 +2096,19 @@ static void ascstatus(struct io_data *io_data, int asc, bool isjson, bool precom
 
 		status = (char *)status2str(cgpu->status);
 
+		char mhsavg[10], mhsname[27];
+		double displayed_total = cgpu->total_mhashes / dev_runtime;
+		double displayed_rolling = cgpu->rolling;
+		calculate_mhash_api_return(displayed_rolling, displayed_total, mhsavg, mhsname);
+
 		root = api_add_int(root, "ASC", &asc, false);
 		root = api_add_string(root, "Name", cgpu->drv->name, false);
 		root = api_add_int(root, "ID", &(cgpu->device_id), false);
 		root = api_add_string(root, "Enabled", enabled, false);
 		root = api_add_string(root, "Status", status, false);
 		root = api_add_temp(root, "Temperature", &temp, false);
-		double mhs = cgpu->total_mhashes / dev_runtime;
-		root = api_add_mhs(root, "MHS av", &mhs, false);
-		char mhsname[27];
-		sprintf(mhsname, "MHS %ds", opt_log_interval);
-		root = api_add_mhs(root, mhsname, &(cgpu->rolling), false);
+		root = api_add_mhs(root, mhsavg, &displayed_total, false);
+		root = api_add_mhs(root, mhsname, &displayed_rolling, false);
 		root = api_add_int(root, "Accepted", &(cgpu->accepted), false);
 		root = api_add_int(root, "Rejected", &(cgpu->rejected), false);
 		root = api_add_int(root, "Hardware Errors", &(cgpu->hw_errors), false);
@@ -2165,17 +2184,19 @@ static void pgastatus(struct io_data *io_data, int pga, bool isjson, bool precom
 
 		status = (char *)status2str(cgpu->status);
 
+		char mhsavg[10], mhsname[27];
+		double displayed_total = cgpu->total_mhashes / dev_runtime;
+		double displayed_rolling = cgpu->rolling;
+		calculate_mhash_api_return(displayed_rolling, displayed_total, mhsavg, mhsname);
+
 		root = api_add_int(root, "PGA", &pga, false);
 		root = api_add_string(root, "Name", cgpu->drv->name, false);
 		root = api_add_int(root, "ID", &(cgpu->device_id), false);
 		root = api_add_string(root, "Enabled", enabled, false);
 		root = api_add_string(root, "Status", status, false);
 		root = api_add_temp(root, "Temperature", &temp, false);
-		double mhs = cgpu->total_mhashes / dev_runtime;
-		root = api_add_mhs(root, "MHS av", &mhs, false);
-		char mhsname[27];
-		sprintf(mhsname, "MHS %ds", opt_log_interval);
-		root = api_add_mhs(root, mhsname, &(cgpu->rolling), false);
+		root = api_add_mhs(root, mhsavg, &displayed_total, false);
+		root = api_add_mhs(root, mhsname, &displayed_rolling, false);
 		root = api_add_int(root, "Accepted", &(cgpu->accepted), false);
 		root = api_add_int(root, "Rejected", &(cgpu->rejected), false);
 		root = api_add_int(root, "Hardware Errors", &(cgpu->hw_errors), false);
@@ -2602,14 +2623,16 @@ static void summary(struct io_data *io_data, __maybe_unused SOCKETTYPE c, __mayb
 	mutex_lock(&hash_lock);
 
 	utility = total_accepted / ( total_secs ? total_secs : 1 ) * 60;
-	mhs = total_mhashes_done / total_secs;
 	work_utility = total_diff1 / ( total_secs ? total_secs : 1 ) * 60;
 
+	char mhsavg[10], mhsname[27];
+	double displayed_total = total_mhashes_done / total_secs;
+	double displayed_rolling = total_rolling;
+	calculate_mhash_api_return(displayed_rolling, displayed_total, mhsavg, mhsname);
+
 	root = api_add_elapsed(root, "Elapsed", &(total_secs), true);
-	root = api_add_mhs(root, "MHS av", &(mhs), false);
-	char mhsname[27];
-	sprintf(mhsname, "MHS %ds", opt_log_interval);
-	root = api_add_mhs(root, mhsname, &(total_rolling), false);
+	root = api_add_mhs(root, mhsavg, &displayed_total, false);
+	root = api_add_mhs(root, mhsname, &displayed_rolling, false);
 	root = api_add_uint(root, "Found Blocks", &(found_blocks), true);
 	root = api_add_int(root, "Getworks", &(total_getworks), true);
 	root = api_add_int(root, "Accepted", &(total_accepted), true);
