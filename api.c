@@ -1963,13 +1963,13 @@ static const char *status2str(enum alive status)
 }
 #endif
 
-static void calculate_mhash_api_return(double displayed_rolling, double displayed_total, char * mhsavg, char * mhsname)
+static void calculate_mhash_api_return(double * displayed_rolling, double * displayed_total, char * mhsavg, char * mhsname)
 {
 	bool mhash_base = true;
 
-	if (displayed_rolling < 1) {
-		displayed_rolling *= 1000;
-		displayed_total *= 1000;
+	if ((*displayed_rolling) < 1) {
+		(*displayed_rolling) *= 1000;
+		(*displayed_total) *= 1000;
 		mhash_base = false;
 	}
 
@@ -2014,7 +2014,7 @@ static void gpustatus(struct io_data *io_data, int gpu, bool isjson, bool precom
 		char mhsavg[10], mhsname[27];
 		double displayed_total = cgpu->total_mhashes / total_secs;
 		double displayed_rolling = cgpu->rolling;
-		calculate_mhash_api_return(displayed_rolling, displayed_total, mhsavg, mhsname);
+		calculate_mhash_api_return(&displayed_rolling, &displayed_total, mhsavg, mhsname);
 
 		root = api_add_int(root, "GPU", &gpu, false);
 		root = api_add_string(root, "Enabled", enabled, false);
@@ -2099,7 +2099,7 @@ static void ascstatus(struct io_data *io_data, int asc, bool isjson, bool precom
 		char mhsavg[10], mhsname[27];
 		double displayed_total = cgpu->total_mhashes / dev_runtime;
 		double displayed_rolling = cgpu->rolling;
-		calculate_mhash_api_return(displayed_rolling, displayed_total, mhsavg, mhsname);
+		calculate_mhash_api_return(&displayed_rolling, &displayed_total, mhsavg, mhsname);
 
 		root = api_add_int(root, "ASC", &asc, false);
 		root = api_add_string(root, "Name", cgpu->drv->name, false);
@@ -2187,7 +2187,7 @@ static void pgastatus(struct io_data *io_data, int pga, bool isjson, bool precom
 		char mhsavg[10], mhsname[27];
 		double displayed_total = cgpu->total_mhashes / dev_runtime;
 		double displayed_rolling = cgpu->rolling;
-		calculate_mhash_api_return(displayed_rolling, displayed_total, mhsavg, mhsname);
+		calculate_mhash_api_return(&displayed_rolling, &displayed_total, mhsavg, mhsname);
 
 		root = api_add_int(root, "PGA", &pga, false);
 		root = api_add_string(root, "Name", cgpu->drv->name, false);
@@ -2628,7 +2628,7 @@ static void summary(struct io_data *io_data, __maybe_unused SOCKETTYPE c, __mayb
 	char mhsavg[10], mhsname[27];
 	double displayed_total = total_mhashes_done / total_secs;
 	double displayed_rolling = total_rolling;
-	calculate_mhash_api_return(displayed_rolling, displayed_total, mhsavg, mhsname);
+	calculate_mhash_api_return(&displayed_rolling, &displayed_total, mhsavg, mhsname);
 
 	root = api_add_elapsed(root, "Elapsed", &(total_secs), true);
 	root = api_add_mhs(root, mhsavg, &displayed_total, false);
