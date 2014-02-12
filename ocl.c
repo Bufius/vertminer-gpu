@@ -813,7 +813,7 @@ built:
 
 #ifdef USE_SCRYPT
 	if (opt_scrypt || opt_nscrypt) {
-		uint bsize = opt_nscrypt ? 2048 : 1024;
+		cl_uint bsize = opt_nscrypt ? 2048 : 1024;
 		//applog(LOG_DEBUG, "++++++++ BSIZE: %d", bsize);
 		size_t ipt = (bsize / cgpu->lookup_gap + (bsize % cgpu->lookup_gap > 0));
 		size_t bufsize = 128 * ipt * cgpu->thread_concurrency;
