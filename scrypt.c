@@ -415,10 +415,10 @@ void scrypt_regenhash(struct work *work)
 	uint32_t *nonce = (uint32_t *)(work->data + 76);
 	uint32_t *ohash = (uint32_t *)(work->hash);
  	
-	//if (opt_scrypt_vert) {
+	if (opt_nscrypt) {
 		timestamp = bswap_32(*((uint32_t *)(work->data + 17*4)));
  		nfactor = vert_GetNfactor(timestamp) + 1;
-  //}	
+	}	
 
 	be32enc_vect(data, (const uint32_t *)work->data, 19);
 	data[19] = htobe32(*nonce);

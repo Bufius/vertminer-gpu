@@ -1147,10 +1147,10 @@ extern bool add_pool_details(struct pool *pool, bool live, char *url, char *user
 #define MAX_SCRYPT_INTENSITY 21
 #define MAX_SCRYPT_INTENSITY_STR "21"
 #ifdef USE_SCRYPT
-#define MIN_INTENSITY (opt_scrypt ? MIN_SCRYPT_INTENSITY : MIN_SHA_INTENSITY)
-#define MIN_INTENSITY_STR (opt_scrypt ? MIN_SCRYPT_INTENSITY_STR : MIN_SHA_INTENSITY_STR)
-#define MAX_INTENSITY (opt_scrypt ? MAX_SCRYPT_INTENSITY : MAX_SHA_INTENSITY)
-#define MAX_INTENSITY_STR (opt_scrypt ? MAX_SCRYPT_INTENSITY_STR : MAX_SHA_INTENSITY_STR)
+#define MIN_INTENSITY ((opt_scrypt || opt_nscrypt) ? MIN_SCRYPT_INTENSITY : MIN_SHA_INTENSITY)
+#define MIN_INTENSITY_STR ((opt_scrypt || opt_nscrypt) ? MIN_SCRYPT_INTENSITY_STR : MIN_SHA_INTENSITY_STR)
+#define MAX_INTENSITY ((opt_scrypt || opt_nscrypt) ? MAX_SCRYPT_INTENSITY : MAX_SHA_INTENSITY)
+#define MAX_INTENSITY_STR ((opt_scrypt || opt_nscrypt) ? MAX_SCRYPT_INTENSITY_STR : MAX_SHA_INTENSITY_STR)
 #define MAX_GPU_INTENSITY MAX_SCRYPT_INTENSITY
 #else
 #define MIN_INTENSITY MIN_SHA_INTENSITY
@@ -1174,8 +1174,10 @@ extern struct cgpu_info gpus[MAX_GPUDEVICES];
 extern int gpu_threads;
 #ifdef USE_SCRYPT
 extern bool opt_scrypt;
+extern bool opt_nscrypt;
 #else
 #define opt_scrypt (0)
+#define opt_nscrypt(0)
 #endif
 extern double total_secs;
 extern int mining_threads;

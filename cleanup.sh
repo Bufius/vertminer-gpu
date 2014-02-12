@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 if [ -a vertminer.o ]
 then
   make clean

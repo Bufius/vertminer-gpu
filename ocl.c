@@ -390,7 +390,7 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize)
 	char numbuf[16];
 
 	if (cgpu->kernel == KL_NONE) {
-		if (opt_scrypt) {
+		if (opt_scrypt || opt_nscrypt) {
 			applog(LOG_INFO, "Selecting scrypt kernel");
 			clState->chosen_kernel = KL_SCRYPT;
 		} else if (!strstr(name, "Tahiti") &&
@@ -470,12 +470,12 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize)
 	}
 
 	if (((clState->chosen_kernel == KL_POCLBM || clState->chosen_kernel == KL_DIABLO || clState->chosen_kernel == KL_DIAKGCN) &&
-		clState->vwidth == 1 && clState->hasOpenCL11plus) || opt_scrypt)
+		clState->vwidth == 1 && clState->hasOpenCL11plus) || (opt_scrypt || opt_nscrypt))
 			clState->goffset = true;
 
 	if (cgpu->work_size && cgpu->work_size <= clState->max_work_size)
 		clState->wsize = cgpu->work_size;
-	else if (opt_scrypt)
+	else if (opt_scrypt || opt_nscrypt) 
 		clState->wsize = 256;
 	else if (strstr(name, "Tahiti"))
 		clState->wsize = 64;
@@ -484,7 +484,7 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize)
 	cgpu->work_size = clState->wsize;
 
 #ifdef USE_SCRYPT
-	if (opt_scrypt) {
+	if (opt_scrypt || opt_nscrypt) {
 		if (!cgpu->opt_lg) {
 			applog(LOG_DEBUG, "GPU %d: selecting lookup gap of 2", gpu);
 			cgpu->lookup_gap = 2;
@@ -542,7 +542,7 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize)
 	strcat(binaryfilename, name);
 	if (clState->goffset)
 		strcat(binaryfilename, "g");
-	if (opt_scrypt) {
+	if (opt_scrypt || opt_nscrypt) {
 #ifdef USE_SCRYPT
 		sprintf(numbuf, "lg%utc%u", cgpu->lookup_gap, (unsigned int)cgpu->thread_concurrency);
 		strcat(binaryfilename, numbuf);
@@ -615,7 +615,7 @@ build:
 	char *CompilerOptions = calloc(1, 256);
 
 #ifdef USE_SCRYPT
-	if (opt_scrypt)
+	if (opt_scrypt || opt_nscrypt)
 		sprintf(CompilerOptions, "-D LOOKUP_GAP=%d -D CONCURRENT_THREADS=%d -D WORKSIZE=%d",
 			cgpu->lookup_gap, (unsigned int)cgpu->thread_concurrency, (int)clState->wsize);
 	else
@@ -812,8 +812,10 @@ built:
 	}
 
 #ifdef USE_SCRYPT
-	if (opt_scrypt) {
-		size_t ipt = (2048 / cgpu->lookup_gap + (2048 % cgpu->lookup_gap > 0));
+	if (opt_scrypt || opt_nscrypt) {
+		uint bsize = opt_nscrypt ? 2048 : 1024;
+		//applog(LOG_DEBUG, "++++++++ BSIZE: %d", bsize);
+		size_t ipt = (bsize / cgpu->lookup_gap + (bsize % cgpu->lookup_gap > 0));
 		size_t bufsize = 128 * ipt * cgpu->thread_concurrency;
 
 		/* Use the max alloc value which has been rounded to a power of

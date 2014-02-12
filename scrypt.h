@@ -7,6 +7,7 @@
 extern int scrypt_test(unsigned char *pdata, const unsigned char *ptarget,
 			uint32_t nonce);
 extern void scrypt_regenhash(struct work *work);
+extern bool opt_nscrypt;
 
 #else /* USE_SCRYPT */
 static inline int scrypt_test(__maybe_unused unsigned char *pdata,

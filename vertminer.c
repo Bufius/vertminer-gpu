@@ -121,7 +121,8 @@ int opt_dynamic_interval = 7;
 int opt_g_threads = -1;
 int gpu_threads;
 #ifdef USE_SCRYPT
-bool opt_scrypt = true;
+bool opt_scrypt = false;
+bool opt_nscrypt = false;
 #endif
 #endif
 bool opt_restart = true;
@@ -1372,9 +1373,12 @@ static struct opt_table opt_config_table[] = {
 		     set_schedtime, NULL, &schedstop,
 		     "Set a time of day in HH:MM to stop mining (will quit without a start time)"),
 #ifdef USE_SCRYPT
-	OPT_WITHOUT_ARG("--scrypt-vert",
+	OPT_WITHOUT_ARG("--scrypt",
 			opt_set_bool, &opt_scrypt,
-			"Use the scrypt-vert algorithm for mining (vertcoin only)"),
+			"Use the scrypt-vert algorithm for mining scrypt (NO factor scrypt!)"),
+	OPT_WITHOUT_ARG("--nscrypt",
+			opt_set_bool, &opt_nscrypt,
+			"Use the scrypt-vert algorithm for mining (NO scyrpt!)"),
 	OPT_WITH_ARG("--shaders",
 		     set_shaders, NULL, NULL,
 		     "GPU shaders per card for tuning scrypt, comma separated"),
@@ -2300,9 +2304,9 @@ static void curses_print_status(void)
 	mvwhline(statuswin, 1, 0, '-', 80);
 	cg_mvwprintw(statuswin, 2, 0, " %s", statusline);
 	wclrtoeol(statuswin);
-	cg_mvwprintw(statuswin, 3, 0, " ST: %d  SS: %d (%03.1f%%)  NB: %d  LW: %d  GF: %d  RF: %d   ",
-		total_staged(), total_stale, (double)((double)(100*total_stale)/(double)(local_work)), new_blocks,
-		local_work, total_go, total_ro);
+	cg_mvwprintw(statuswin, 3, 0, " ST: %d  SS: %d (%03.1f%%)  NB: %d  PA: %d  PR: %d  LW: %d  GF: %d  RF: %d   ",
+		total_staged(), total_stale, ((double)(100*total_stale)/(double)(pool->accepted)), 
+		pool->accepted, pool->rejected, new_blocks, local_work, total_go, total_ro);
 	wclrtoeol(statuswin);
 	if (shared_strategy() && total_pools > 1) {
 		cg_mvwprintw(statuswin, 4, 0, " Connected to multiple pools with%s block change notify",
@@ -2875,8 +2879,8 @@ static bool submit_upstream_work(struct work *work, CURL *curl, bool resubmit)
 
 			snprintf(worktime, sizeof(worktime),
 				" <-%08lx.%08lx M:%c D:%1.*f G:%02d:%02d:%02d:%1.3f %s (%1.3f) W:%1.3f (%1.3f) S:%1.3f R:%02d:%02d:%02d",
-				(unsigned long)be32toh(*(uint32_t *)&(work->data[opt_scrypt ? 32 : 28])),
-				(unsigned long)be32toh(*(uint32_t *)&(work->data[opt_scrypt ? 28 : 24])),
+				(unsigned long)be32toh(*(uint32_t *)&(work->data[(opt_scrypt || opt_nscrypt) ? 32 : 28])),
+				(unsigned long)be32toh(*(uint32_t *)&(work->data[(opt_scrypt || opt_nscrypt) ? 28 : 24])),
 				work->getwork_mode, diffplaces, work->work_difficulty,
 				tm_getwork.tm_hour, tm_getwork.tm_min,
 				tm_getwork.tm_sec, getwork_time, workclone,
@@ -3134,7 +3138,7 @@ static void calc_diff(struct work *work, double known)
 		double d64, dcut64;
 
 		d64 = truediffone;
-		if (opt_scrypt)
+		if ((opt_scrypt || opt_nscrypt))
 			d64 *= (double)65536;
 		dcut64 = le256todouble(work->target);
 		if (unlikely(!dcut64))
@@ -3272,7 +3276,7 @@ static void __kill_work(void)
 #ifdef USE_USBUTILS
 	/* Best to get rid of it first so it doesn't
 	 * try to create any new devices */
-	if (!opt_scrypt) {
+	if (!(opt_scrypt || opt_nscrypt)) {
 		forcelog(LOG_DEBUG, "Killing off HotPlug thread");
 		thr = &control_thr[hotplug_thr_id];
 		kill_timeout(thr);
@@ -3319,7 +3323,7 @@ static void __kill_work(void)
 #ifdef USE_USBUTILS
 	/* Release USB resources in case it's a restart
 	 * and not a QUIT */
-	if (!opt_scrypt) {
+	if (!(opt_scrypt || opt_nscrypt)) {
 		forcelog(LOG_DEBUG, "Releasing all USB devices");
 		cg_completion_timeout(&usb_cleanup, NULL, 1000);
 
@@ -3770,7 +3774,7 @@ static uint64_t share_diff(const struct work *work)
 	uint64_t ret;
 
 	d64 = truediffone;
-	if (opt_scrypt)
+	if ((opt_scrypt || opt_nscrypt))
 		d64 *= (double)65536;
 	s64 = le256todouble(work->hash);
 	if (unlikely(!s64))
@@ -3808,7 +3812,7 @@ static void regen_hash(struct work *work)
 
 static void rebuild_hash(struct work *work)
 {
-	if (opt_scrypt)
+	if ((opt_scrypt || opt_nscrypt))
 		scrypt_regenhash(work);
 	else
 		regen_hash(work);
@@ -6008,7 +6012,7 @@ void set_target(unsigned char *dest_target, double diff)
 	}
 
 	d64 = truediffone;
-	if (opt_scrypt)
+	if ((opt_scrypt || opt_nscrypt))
 		d64 *= (double)65536;
 	d64 /= diff;
 
@@ -6225,7 +6229,7 @@ bool test_nonce(struct work *work, uint32_t nonce)
 	uint32_t diff1targ;
 
 	rebuild_nonce(work, nonce);
-	diff1targ = opt_scrypt ? 0x0000ffffUL : 0;
+	diff1targ = (opt_scrypt || opt_nscrypt) ? 0x0000ffffUL : 0;
 
 	return (le32toh(*hash_32) <= diff1targ);
 }
@@ -6236,7 +6240,7 @@ bool test_nonce_diff(struct work *work, uint32_t nonce, double diff)
 	uint64_t *hash64 = (uint64_t *)(work->hash + 24), diff64;
 
 	rebuild_nonce(work, nonce);
-	diff64 = opt_scrypt ? 0x0000ffff00000000ULL : 0x00000000ffff0000ULL;
+	diff64 = (opt_scrypt || opt_nscrypt) ? 0x0000ffff00000000ULL : 0x00000000ffff0000ULL;
 	diff64 /= diff;
 
 	return (le64toh(*hash64) <= diff64);
@@ -6248,7 +6252,7 @@ static void update_work_stats(struct thr_info *thr, struct work *work)
 
 	work->share_diff = share_diff(work);
 
-	if (opt_scrypt)
+	if ((opt_scrypt || opt_nscrypt))
 		test_diff *= 65536;
 
 	if (unlikely(work->share_diff >= test_diff)) {
@@ -6388,7 +6392,7 @@ static void hash_sole_work(struct thr_info *mythr)
 		/* Dynamically adjust the working diff even if the target
 		 * diff is very high to ensure we can still validate scrypt is
 		 * returning shares. */
-		if (opt_scrypt) {
+		if ((opt_scrypt  || opt_nscrypt)) {
 			double wu;
 
 			wu = total_diff1 / total_secs * 60;
@@ -8128,7 +8132,7 @@ int main(int argc, char *argv[])
 	if (opt_benchmark) {
 		struct pool *pool;
 
-		if (opt_scrypt)
+		if ((opt_scrypt || opt_nscrypt))
 			quit(1, "Cannot use benchmark mode with scrypt");
 		pool = add_pool();
 		pool->rpc_url = malloc(255);
@@ -8175,7 +8179,7 @@ int main(int argc, char *argv[])
 
 	/* Use a shorter scantime for scrypt */
 	if (opt_scantime < 0)
-		opt_scantime = opt_scrypt ? 30 : 60;
+		opt_scantime = (opt_scrypt || opt_nscrypt) ? 30 : 60;
 
 	total_control_threads = 9;
 	control_thr = calloc(total_control_threads, sizeof(*thr));
@@ -8188,7 +8192,7 @@ int main(int argc, char *argv[])
 	usb_initialise();
 
 	// before device detection
-	if (!opt_scrypt) {
+	if (!(opt_scrypt || opt_nscrypt)) {
 		cgsem_init(&usb_resource_sem);
 		usbres_thr_id = 1;
 		thr = &control_thr[usbres_thr_id];
@@ -8201,7 +8205,7 @@ int main(int argc, char *argv[])
 	/* Use the DRIVER_PARSE_COMMANDS macro to fill all the device_drvs */
 	DRIVER_PARSE_COMMANDS(DRIVER_FILL_DEVICE_DRV)
 
-	if (opt_scrypt)
+	if ((opt_scrypt || opt_nscrypt))
 		opencl_drv.drv_detect(false);
 	else {
 	/* Use the DRIVER_PARSE_COMMANDS macro to detect all devices */
@@ -8457,7 +8461,7 @@ begin_bench:
 		quit(1, "API thread create failed");
 
 #ifdef USE_USBUTILS
-	if (!opt_scrypt) {
+	if (!(opt_scrypt || opt_nscrypt)) {
 		hotplug_thr_id = 7;
 		thr = &control_thr[hotplug_thr_id];
 		if (thr_info_create(thr, NULL, hotplug_thread, thr))
