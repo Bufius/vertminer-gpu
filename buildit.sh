@@ -10,3 +10,4 @@ else
   echo "stripping vertminer"
   strip vertminer
 fi
+

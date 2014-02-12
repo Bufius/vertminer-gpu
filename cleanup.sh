@@ -11,3 +11,4 @@ mv _configure.ac configure.ac
 for i in `find .|grep autom4te.cache`; do rm -Rf $i; done
 for i in `find .|grep Makefile$`; do rm -Rf $i; done
 for i in `find .|grep Makefile.in`; do rm -Rf $i; done
+
