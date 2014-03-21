@@ -1,4 +1,4 @@
-/*
+	/*
  * Copyright 2011-2012 Con Kolivas
  * Copyright 2011-2012 Luke Dashjr
  * Copyright 2010 Jeff Garzik
@@ -1361,7 +1361,7 @@ static void get_opencl_statline_before(char *buf, size_t bufsiz, struct cgpu_inf
 
 static void get_opencl_statline(char *buf, size_t bufsiz, struct cgpu_info *gpu)
 {
-	tailsprintf(buf, bufsiz, " I:%2d", gpu->intensity);
+	tailsprintf(buf, bufsiz, " T:%d I:%2d", gpu->threads, gpu->intensity);
 }
 
 struct opencl_thread_data {
