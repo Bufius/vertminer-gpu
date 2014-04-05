@@ -1177,7 +1177,7 @@ extern bool opt_scrypt;
 extern bool opt_nscrypt;
 #else
 #define opt_scrypt (0)
-#define opt_nscrypt(0)
+#define opt_nscrypt (0)
 #endif
 extern double total_secs;
 extern int mining_threads;
