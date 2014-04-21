@@ -163,6 +163,7 @@ static const char *FALSESTR = "false";
 
 #ifdef USE_SCRYPT
 static const char *SCRYPTSTR = "scrypt";
+static const char *NSCRYPTSTR = "scrypt-n";
 #endif
 static const char *SHA256STR = "sha256";
 
@@ -3661,6 +3662,8 @@ static void minecoin(struct io_data *io_data, __maybe_unused SOCKETTYPE c, __may
 #ifdef USE_SCRYPT
 	if (opt_scrypt)
 		root = api_add_const(root, "Hash Method", SCRYPTSTR, false);
+	else if (opt_nscrypt)
+		root = api_add_const(root, "Hash Method", NSCRYPTSTR, false);
 	else
 #endif
 		root = api_add_const(root, "Hash Method", SHA256STR, false);
