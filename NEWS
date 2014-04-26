@@ -1,3 +1,9 @@
+Version 0.5.4pre3 - 26 April 2014
+- slightly improved opencl + cleanup
+- add multiple gpu-threads support
+- some bugfixes (e.g. proper hash method in API, compile issues)
+
+
 Version 0.5.4pre2 - 12 February 2014
 - include more ADL6 stuff
 - prepared miner to mine scrypt and nfactor scrypt

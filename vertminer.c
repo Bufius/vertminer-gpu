@@ -1176,11 +1176,15 @@ static struct opt_table opt_config_table[] = {
 		     set_int_0_to_9999, opt_show_intval, &opt_platform_id,
 		     "Select OpenCL platform ID to use for GPU mining"),
 
+#ifndef HAVE_ADL
 	OPT_WITH_ARG("--gpu-threads|-g",
 		     set_int_1_to_10, opt_show_intval, &opt_g_threads,
 		     "Number of threads per GPU (1 - 10)"),
 
-#ifdef HAVE_ADL
+#else
+	OPT_WITH_ARG("--gpu-threads|-g",
+		     set_gpu_threads, NULL, NULL,
+		     "Number of threads per GPU - one value or comma separated list (e.g. 1,2,1)"),
 	OPT_WITH_ARG("--gpu-engine",
 		     set_gpu_engine, NULL, NULL,
 		     "GPU engine (over)clock range in Mhz - one value, range and/or comma separated list (e.g. 850-900,900,750-850)"),
@@ -5005,7 +5009,7 @@ static void set_options(void)
 	clear_logwin();
 retry:
 	wlogprint("[Q]ueue: %d\n[S]cantime: %d\n[E]xpiry: %d\n"
-		  "[W]rite config file\n[C]gminer restart\n",
+		  "[W]rite config file\n[R]estart vertminer\n",
 		opt_queue, opt_scantime, opt_expiry);
 	wlogprint("Select an option or any other key to return\n");
 	logwin_update();
@@ -5065,7 +5069,7 @@ retry:
 		fclose(fcfg);
 		goto retry;
 
-	} else if (!strncasecmp(&input, "c", 1)) {
+	} else if (!strncasecmp(&input, "r", 1)) {
 		wlogprint("Are you sure?\n");
 		input = getch();
 		if (!strncasecmp(&input, "y", 1))
