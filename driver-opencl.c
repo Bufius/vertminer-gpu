@@ -129,7 +129,7 @@ char *set_shaders(char *arg)
 
 	nextptr = strtok(arg, ",");
 	if (nextptr == NULL)
-		return "Invalid parameters for set lookup gap";
+		return "Invalid parameters for set shaders";
 	val = atoi(nextptr);
 
 	gpus[device++].shaders = val;
@@ -156,11 +156,19 @@ char *set_lookup_gap(char *arg)
 	if (nextptr == NULL)
 		return "Invalid parameters for set lookup gap";
 	val = atoi(nextptr);
+	if (val != 2 && val != 4 && val != 8) {
+			applog(LOG_ERR, "lookup_gap for device %d set to 2, %d is not allowed", device, val);
+		val = 2;
+	}
 
 	gpus[device++].opt_lg = val;
 
 	while ((nextptr = strtok(NULL, ",")) != NULL) {
 		val = atoi(nextptr);
+		if (val != 2 && val != 4 && val != 8) {
+			applog(LOG_ERR, "lookup_gap for device %d set to 2, %d is not allowed", device, val);
+			val = 2;
+		}
 
 		gpus[device++].opt_lg = val;
 	}

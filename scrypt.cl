@@ -144,13 +144,11 @@ __constant uint K[] = {
 	0x00000300U
 };
 
-#pragma OPENCL EXTENSION cl_amd_media_ops : enable
-
-#define rotl(x,y) rotate(x,y)
-#define Ch(x,y,z) bitselect(z,y,x)
+#define rotl(x,y)  rotate(x,y)
+#define Ch(x,y,z)  bitselect(z,y,x)
 #define Maj(x,y,z) Ch((x^z),y,z)
-#define mod2(x,y) (x & (y-1))
-#define mod4(x) (x & 3)
+#define mod2(x,y)  (x & (y-1))
+#define mod4(x)    (x & 3)
 
 #define EndianSwap(n) (rotl(n&0x00FF00FF,24U)|rotl(n&0xFF00FF00,8U))
 
@@ -602,92 +600,11 @@ void salsa(uint4 B[8])
 		B[i+4] += w[i];
 }
 
-void salsa_double(uint4 B[8])
-{
-  uint i;
-	uint4 w[4];
-
-#pragma unroll 4
-  	for(i=0; i<4; ++i)
-  		w[i] = (B[i]^=B[i+4]);
-  
-#pragma unroll 4
-  	for(i=0; i<4; ++i)
-  	{
-  		w[0] ^= rotl(w[3]     +w[2]     , 7U);
-  		w[1] ^= rotl(w[0]     +w[3]     , 9U);
-  		w[2] ^= rotl(w[1]     +w[0]     ,13U);
-  		w[3] ^= rotl(w[2]     +w[1]     ,18U);
-  		w[2] ^= rotl(w[3].wxyz+w[0].zwxy, 7U);
-  		w[1] ^= rotl(w[2].wxyz+w[3].zwxy, 9U);
-  		w[0] ^= rotl(w[1].wxyz+w[2].zwxy,13U);
-  		w[3] ^= rotl(w[0].wxyz+w[1].zwxy,18U);
-  	}
-  
-#pragma unroll 4
-  	for(i=0; i<4; ++i)
-  		w[i] = (B[i+4]^=(B[i]+=w[i]));
-  
-#pragma unroll 4
-  	for(i=0; i<4; ++i)
-  	{
-  		w[0] ^= rotl(w[3]     +w[2]     , 7U);
-  		w[1] ^= rotl(w[0]     +w[3]     , 9U);
-  		w[2] ^= rotl(w[1]     +w[0]     ,13U);
-  		w[3] ^= rotl(w[2]     +w[1]     ,18U);
-  		w[2] ^= rotl(w[3].wxyz+w[0].zwxy, 7U);
-  		w[1] ^= rotl(w[2].wxyz+w[3].zwxy, 9U);
-  		w[0] ^= rotl(w[1].wxyz+w[2].zwxy,13U);
-  		w[3] ^= rotl(w[0].wxyz+w[1].zwxy,18U);
-  	}
-  
-#pragma unroll 4 
-  	for(i=0; i<4; ++i)
-  		B[i+4] += w[i];
-  		
-#pragma unroll 4
-  	for(i=0; i<4; ++i)
-  		w[i] = (B[i]^=B[i+4]);
-  
-#pragma unroll 4
-  	for(i=0; i<4; ++i)
-  	{
-  		w[0] ^= rotl(w[3]     +w[2]     , 7U);
-  		w[1] ^= rotl(w[0]     +w[3]     , 9U);
-  		w[2] ^= rotl(w[1]     +w[0]     ,13U);
-  		w[3] ^= rotl(w[2]     +w[1]     ,18U);
-  		w[2] ^= rotl(w[3].wxyz+w[0].zwxy, 7U);
-  		w[1] ^= rotl(w[2].wxyz+w[3].zwxy, 9U);
-  		w[0] ^= rotl(w[1].wxyz+w[2].zwxy,13U);
-  		w[3] ^= rotl(w[0].wxyz+w[1].zwxy,18U);
-  	}
-  
-#pragma unroll 4
-  	for(i=0; i<4; ++i)
-  		w[i] = (B[i+4]^=(B[i]+=w[i]));
-  
-#pragma unroll 4
-  	for(i=0; i<4; ++i)
-  	{
-  		w[0] ^= rotl(w[3]     +w[2]     , 7U);
-  		w[1] ^= rotl(w[0]     +w[3]     , 9U);
-  		w[2] ^= rotl(w[1]     +w[0]     ,13U);
-  		w[3] ^= rotl(w[2]     +w[1]     ,18U);
-  		w[2] ^= rotl(w[3].wxyz+w[0].zwxy, 7U);
-  		w[1] ^= rotl(w[2].wxyz+w[3].zwxy, 9U);
-  		w[0] ^= rotl(w[1].wxyz+w[2].zwxy,13U);
-  		w[3] ^= rotl(w[0].wxyz+w[1].zwxy,18U);
-  	}
-  
-#pragma unroll 4 
-  	for(i=0; i<4; ++i)
-  		B[i+4] += w[i];  		
-}
-
 
 void scrypt_core(const uint gid, uint4 X[8], __global uint4*restrict lookup, const uint n)
 {
-    const uint4 coorSIZE = (uint4)(CONCURRENT_THREADS, (N[10]+1)>>(LOOKUP_GAP>>1U), 8, gid%CONCURRENT_THREADS);
+    const uint4 lookup_gap_special = (uint4)((uint)(LOOKUP_GAP-1U), popcount((uint)(LOOKUP_GAP-1U)),3U - popcount((uint)(LOOKUP_GAP-1U)) , 0);
+    const uint4 coorSIZE = (uint4)(CONCURRENT_THREADS, (N[10]+1)>>lookup_gap_special.y, 8, gid%CONCURRENT_THREADS);
     uint4 V[8];
     uint i=0, j=0, y=0, z=0, ncounter=0;
     uint COx=rotl(coorSIZE.w, 3U);
@@ -702,12 +619,11 @@ void scrypt_core(const uint gid, uint4 X[8], __global uint4*restrict lookup, con
             COz = COx;
 #pragma unroll 8     
   		    for(z=0; z<coorSIZE.z; ++z, ++COz)
-  			   lookup[COz] = X[z];
+                lookup[COz] = X[z];
   
-            j = 0;
-            do {      
-                salsa_double(X);
-            } while (++j < (LOOKUP_GAP>>1U));
+#pragma unroll 2
+            for (j=0; j<LOOKUP_GAP; ++j)      
+                salsa(X);
 	
             COx += COy;
         } while (++y < (coorSIZE.y << ncounter));
@@ -720,22 +636,22 @@ void scrypt_core(const uint gid, uint4 X[8], __global uint4*restrict lookup, con
     ncounter = 0;
     do {
         do {
-            y = X[7].x & (N[n] - (LOOKUP_GAP-1));
-            COz = COy + rotl((coorSIZE.x*y), 3U - (LOOKUP_GAP>>1U));      
+            y = X[7].x & (N[n] - lookup_gap_special.x);
+            COz = COy + rotl((coorSIZE.x*y), lookup_gap_special.z);      
         
 #pragma unroll 8
         	for(z=0; z<coorSIZE.z; ++z, ++COz)
-        		V[z] = lookup[COz];
-        
+                V[z] = lookup[COz];     	
+
+            if (mod2(X[7].x, LOOKUP_GAP)) {       
 #if (LOOKUP_GAP == 2)
-            if (X[7].x&1)
                 salsa(V);
-#else // LOOKUP_GAP == 4
-            j = 0;
-            while (j++ < mod2(X[7].x, LOOKUP_GAP)) {    
-                salsa(V);
-            }
+#else
+#pragma unroll 1
+                for (j=0; j<mod2(X[7].x, LOOKUP_GAP); ++j)
+                    salsa(V);
 #endif
+            }
         
 #pragma unroll 8
             for(z=0; z<coorSIZE.z; ++z)
@@ -772,7 +688,7 @@ const uint4 midstate0, const uint4 midstate16, const uint target, const uint nFa
 	SHA256(&tstate0, &tstate1, input[0],input[1],input[2],input[3]);
 
 #pragma unroll 4
-	for (uint i=0; i<4; i++) 
+	for (uint i=0; i<4; ++i) 
 	{
 		pad0 = tstate0;
 		pad1 = tstate1;

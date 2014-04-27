@@ -1213,7 +1213,7 @@ static struct opt_table opt_config_table[] = {
 #ifdef USE_SCRYPT
 	OPT_WITH_ARG("--lookup-gap",
 		     set_lookup_gap, NULL, NULL,
-		     "Set GPU lookup gap for scrypt mining, comma separated"),
+		     "Set GPU lookup gap for scrypt mining, comma separated (default: 2; allowed: 2, 4, 8)"),
 	OPT_WITH_ARG("--intensity|-I",
 		     set_intensity, NULL, NULL,
 		     "Intensity of GPU scanning (d or " MIN_SHA_INTENSITY_STR
