@@ -28,28 +28,29 @@
  * online backup system.
  */
 
-__constant uint N[] ={
-  0x00000000U,
-	0x00000001U,
-	0x00000003U,
-	0x00000007U,
-	0x0000000FU,	
-	0x0000001FU,
-	0x0000003FU,
-	0x0000007FU,
-	0x000000FFU,
-	0x000001FFU,
-	0x000003FFU,  //2^10 - 1  -> nFactor 1024
-	0x000007FFU,
-	0x00000FFFU,
-	0x00001FFFU,
-	0x00003FFFU,
-	0x00007FFFU,
-	0x0000FFFFU,
-	0x0001FFFFU,
-	0x0003FFFFU,
-	0x0000FFFFU,
-	0x000FFFFFU      	
+/* N (nfactor), CPU/Memory cost parameter */
+__constant uint N[] = {
+	0x00000001U,  /* never used, padding */
+	0x00000002U,
+	0x00000004U,
+	0x00000008U,
+	0x00000010U,
+	0x00000020U,
+	0x00000040U,
+	0x00000080U,
+	0x00000100U,
+	0x00000200U,
+	0x00000400U,  /* 2^10 == 1024, Litecoin scrypt default */
+	0x00000800U,
+	0x00001000U,
+	0x00002000U,
+	0x00004000U,
+	0x00008000U,
+	0x00010000U,
+	0x00020000U,
+	0x00040000U,
+	0x00080000U,
+	0x00100000U
 };
 
 __constant uint K[] = {
@@ -144,6 +145,7 @@ __constant uint K[] = {
 	0x00000300U
 };
 
+#define LOWEST_NFACTOR 10
 #define rotl(x,y)  rotate(x,y)
 #define Ch(x,y,z)  bitselect(z,y,x)
 #define Maj(x,y,z) Ch((x^z),y,z)
@@ -603,66 +605,60 @@ void salsa(uint4 B[8])
 
 void scrypt_core(const uint gid, uint4 X[8], __global uint4*restrict lookup, const uint n)
 {
-    const uint4 lookup_gap_special = (uint4)((uint)(LOOKUP_GAP-1U), popcount((uint)(LOOKUP_GAP-1U)),3U - popcount((uint)(LOOKUP_GAP-1U)) , 0);
-    const uint4 coorSIZE = (uint4)(CONCURRENT_THREADS, (N[10]+1)>>lookup_gap_special.y, 8, gid%CONCURRENT_THREADS);
+    const uint lookup_bits = popcount((uint)(LOOKUP_GAP-1U)); 
+    const uint4 coorSIZE = (uint4)(CONCURRENT_THREADS, N[LOWEST_NFACTOR-lookup_bits], 8, gid%CONCURRENT_THREADS);
     uint4 V[8];
-    uint i=0, j=0, y=0, z=0, ncounter=0;
-    uint COx=rotl(coorSIZE.w, 3U);
+    uint i=0, j=0, y=0, z=0, ncounter=0, additional_salsa=0;
     uint COy=rotl(coorSIZE.x, 3U);
-    uint COz=0; 
+    uint COz=rotl(coorSIZE.w, 3U); 
     
     shittify(X);
 
     // write lookup table to memory
-    do {
-        do {
-            COz = COx;
+#pragma unroll 1    
+    for (ncounter=0; ncounter<N[n-LOWEST_NFACTOR]; ++ncounter) {
+        for (i=0; i<coorSIZE.y; ++i) {
+
 #pragma unroll 8     
-  		    for(z=0; z<coorSIZE.z; ++z, ++COz)
-                lookup[COz] = X[z];
+  		    for(z=0; z<coorSIZE.z; ++z)
+                lookup[COz+z] = X[z];
   
 #pragma unroll 2
             for (j=0; j<LOOKUP_GAP; ++j)      
                 salsa(X);
 	
-            COx += COy;
-        } while (++y < (coorSIZE.y << ncounter));
-    } while (++ncounter < n-9);
-	
+            COz += COy;
+        }
+    }
+
+    // read lookup table from memory and compute
 	COy = rotl(coorSIZE.w, 3U);
+#pragma unroll 1    
+    for (ncounter=0; ncounter<N[n-LOWEST_NFACTOR]; ++ncounter) {
+        for (i=0; i<N[LOWEST_NFACTOR]; ++i) {
+            y = X[7].x & (N[n]-LOOKUP_GAP);
+            COz = COy + rotl((coorSIZE.x*y), 3U-lookup_bits);            
 
-    // read lookup table from memory
-    i = 0;
-    ncounter = 0;
-    do {
-        do {
-            y = X[7].x & (N[n] - lookup_gap_special.x);
-            COz = COy + rotl((coorSIZE.x*y), lookup_gap_special.z);      
-        
 #pragma unroll 8
-        	for(z=0; z<coorSIZE.z; ++z, ++COz)
-                V[z] = lookup[COz];     	
+        	for(z=0; z<coorSIZE.z; ++z)
+                V[z] = lookup[COz+z];
 
-            if (mod2(X[7].x, LOOKUP_GAP)) {       
-#if (LOOKUP_GAP == 2)
-                salsa(V);
-#else
+            additional_salsa = mod2(X[7].x, LOOKUP_GAP);
 #pragma unroll 1
-                for (j=0; j<mod2(X[7].x, LOOKUP_GAP); ++j)
-                    salsa(V);
-#endif
-            }
+            for (j=0; j<additional_salsa; ++j)
+                salsa(V);
         
 #pragma unroll 8
             for(z=0; z<coorSIZE.z; ++z)
                 X[z] ^= V[z];
         		
             salsa(X);
-        } while (++i < ((N[10]+1) << ncounter));
-	} while (++ncounter < n-9);
+        }
+	}
 	
 	unshittify(X);
 }
+
 
 #define SCRYPT_FOUND (0xFF)
 #define SETFOUND(Xnonce) output[output[SCRYPT_FOUND]++] = Xnonce
