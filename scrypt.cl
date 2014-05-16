@@ -145,14 +145,15 @@ __constant uint K[] = {
 	0x00000300U
 };
 
-#define LOWEST_NFACTOR 10
+__constant uint ES[2] = { 0x00FF00FF, 0xFF00FF00 };
+
 #define rotl(x,y)  rotate(x,y)
 #define Ch(x,y,z)  bitselect(z,y,x)
 #define Maj(x,y,z) Ch((x^z),y,z)
-#define mod2(x,y)  (x & (y-1))
-#define mod4(x)    (x & 3)
+#define mod2(x,y)  (x&(y-1U))
+#define mod4(x)    (x&3U)
 
-#define EndianSwap(n) (rotl(n&0x00FF00FF,24U)|rotl(n&0xFF00FF00,8U))
+#define EndianSwap(n) (rotl(n & ES[0], 24U)|rotl(n & ES[1], 8U))
 
 #define Tr2(x)		(rotl(x, 30U) ^ rotl(x, 19U) ^ rotl(x, 10U))
 #define Tr1(x)		(rotl(x, 26U) ^ rotl(x, 21U) ^ rotl(x, 7U))
@@ -165,11 +166,11 @@ __constant uint K[] = {
 	h += Tr2(a) + Maj(a, b, c);
   
 #define WUpdate(i) { \
-	  uint4 tmp1 = (uint4) (W[mod4(i)].y, W[mod4(i)].z, W[mod4(i)].w, W[mod4(i+1)].x);	\
+	  uint4 tmp1 = (uint4) (W[i].y, W[i].z, W[i].w, W[mod4(i+1)].x);	\
 	  uint4 tmp2 = (uint4) (W[mod4(i+2)].y, W[mod4(i+2)].z, W[mod4(i+2)].w, W[mod4(i+3)].x);	\
 	  uint4 tmp3 = (uint4) (W[mod4(i+3)].z, W[mod4(i+3)].w, 0, 0);				\
-	  W[mod4(i)] += tmp2 + Wr2(tmp1) + Wr1(tmp3);					\
-	  W[mod4(i)] += Wr1((uint4) (0, 0, W[mod4(i)].x, W[mod4(i)].y));							\
+	  W[i] += tmp2 + Wr2(tmp1) + Wr1(tmp3);					\
+	  W[i] += Wr1((uint4) (0, 0, W[i].x, W[i].y));							\
 	}
 
 
@@ -308,17 +309,17 @@ void SHA256_fresh(uint4*restrict state0,uint4*restrict state1, const uint4 block
 
 	uint4 W[4] = {block0, block1, block2, block3};
 
-	D= K[63] +W[0].x;
-	H= K[64] +W[0].x;
+	D = K[63] +W[0].x;
+	H = K[64] +W[0].x;
 
-	C= K[65] +Tr1(D)+Ch(D, K[66], K[67])+W[0].y;
-	G= K[68] +C+Tr2(H)+Ch(H, K[69] ,K[70]);
+	C = K[65] +Tr1(D)+Ch(D, K[66], K[67])+W[0].y;
+	G = K[68] +C+Tr2(H)+Ch(H, K[69], K[70]);
 
-	B= K[71] +Tr1(C)+Ch(C,D,K[66])+W[0].z;
-	F= K[72] +B+Tr2(G)+Maj(G,H, K[73]);
+	B = K[71] +Tr1(C)+Ch(C,D,K[66])+W[0].z;
+	F = K[72] +B+Tr2(G)+Maj(G, H, K[73]);
 
-	A= K[74] +Tr1(B)+Ch(B,C,D)+W[0].w;
-	E= K[75] +A+Tr2(F)+Maj(F,G,H);
+	A = K[74] +Tr1(B)+Ch(B, C, D)+W[0].w;
+	E = K[75] +A+Tr2(F)+Maj(F, G, H);
 
 	RND(E,F,G,H,A,B,C,D, W[1].x+ K[4]);
 	RND(D,E,F,G,H,A,B,C, W[1].y+ K[5]);
@@ -560,8 +561,8 @@ void unshittify(uint4 B[8])
 
 void salsa(uint4 B[8])
 {
-  uint i;
-	uint4 w[4];
+    uint i;
+    uint4 w[4];
 
 #pragma unroll 4
 	for(i=0; i<4; ++i)
@@ -603,85 +604,89 @@ void salsa(uint4 B[8])
 }
 
 
-void scrypt_core(const uint gid, uint4 X[8], __global uint4*restrict lookup, const uint n)
+#define LOWEST_NFACTOR 10
+__constant uint COy=CONCURRENT_THREADS*8; 
+void scrypt_core(uint4 X[8], __global uint4* const restrict lookup, const uint n)
 {
-    const uint lookup_bits = popcount((uint)(LOOKUP_GAP-1U)); 
-    const uint4 coorSIZE = (uint4)(CONCURRENT_THREADS, N[LOWEST_NFACTOR-lookup_bits], 8, gid%CONCURRENT_THREADS);
+    const uint lookup_bits      = popcount((uint)(LOOKUP_GAP-1U)); 
+    const uint outer_loop_count = N[n-LOWEST_NFACTOR];
+    const uint inner_loop_count = N[LOWEST_NFACTOR-lookup_bits];
+    const uint COx              = rotl((uint)(get_global_id(0)%CONCURRENT_THREADS), 3U);
+    uint CO                     = COx;
+    uint i, j, z, ncounter, additional_salsa;
     uint4 V[8];
-    uint i=0, j=0, y=0, z=0, ncounter=0, additional_salsa=0;
-    uint COy=rotl(coorSIZE.x, 3U);
-    uint COz=rotl(coorSIZE.w, 3U); 
     
     shittify(X);
 
     // write lookup table to memory
 #pragma unroll 1    
-    for (ncounter=0; ncounter<N[n-LOWEST_NFACTOR]; ++ncounter) {
-        for (i=0; i<coorSIZE.y; ++i) {
-
+    for (ncounter=0; ncounter<outer_loop_count; ++ncounter) {
+        for (i=0; i<inner_loop_count; ++i) {
+        
 #pragma unroll 8     
-  		    for(z=0; z<coorSIZE.z; ++z)
-                lookup[COz+z] = X[z];
+            for(z=0; z<8; ++z)
+                lookup[CO+z] = X[z];
   
 #pragma unroll 2
             for (j=0; j<LOOKUP_GAP; ++j)      
                 salsa(X);
 	
-            COz += COy;
+            CO += COy;
         }
     }
 
     // read lookup table from memory and compute
-	COy = rotl(coorSIZE.w, 3U);
 #pragma unroll 1    
-    for (ncounter=0; ncounter<N[n-LOWEST_NFACTOR]; ++ncounter) {
+    for (ncounter=0; ncounter<outer_loop_count; ++ncounter) {
         for (i=0; i<N[LOWEST_NFACTOR]; ++i) {
-            y = X[7].x & (N[n]-LOOKUP_GAP);
-            COz = COy + rotl((coorSIZE.x*y), 3U-lookup_bits);            
+            j = mul24((X[7].x & (N[n]-LOOKUP_GAP)), (uint)(CONCURRENT_THREADS));
+            CO = COx + rotl(j, 3U-lookup_bits);
+            additional_salsa = mod2(X[7].x, LOOKUP_GAP);            
 
 #pragma unroll 8
-        	for(z=0; z<coorSIZE.z; ++z)
-                V[z] = lookup[COz+z];
+            for(z=0; z<8; ++z)
+                V[z] = lookup[CO+z];
 
-            additional_salsa = mod2(X[7].x, LOOKUP_GAP);
 #pragma unroll 1
             for (j=0; j<additional_salsa; ++j)
                 salsa(V);
         
 #pragma unroll 8
-            for(z=0; z<coorSIZE.z; ++z)
+            for(z=0; z<8; ++z)
                 X[z] ^= V[z];
         		
             salsa(X);
         }
-	}
-	
-	unshittify(X);
+    }
+    
+    unshittify(X);
 }
 
 
+#pragma OPENCL EXTENSION cl_khr_global_int32_base_atomics : enable
 #define SCRYPT_FOUND (0xFF)
-#define SETFOUND(Xnonce) output[output[SCRYPT_FOUND]++] = Xnonce
+#define SETFOUND(Xnonce) output[atomic_add(&output[SCRYPT_FOUND], 1)] = Xnonce;
 
 __attribute__((reqd_work_group_size(WORKSIZE, 1, 1)))
 __attribute__((max_work_group_size(WORKSIZE, 1, 1)))
-__kernel void search(__global const uint4 * restrict input,
-volatile __global uint*restrict output, __global uint4*restrict padcache,
-const uint4 midstate0, const uint4 midstate16, const uint target, const uint nFactor)
+__kernel void search(__global const uint4 * const restrict input,
+                     volatile __global uint* const restrict output, 
+                     __global uint4* const restrict padcache,
+                     const uint4 midstate0, const uint4 midstate16, 
+                     const uint target, const uint nFactor)
 {
-	uint gid = get_global_id(0);
 	uint4 X[8];
 	uint4 tstate0, tstate1, ostate0, ostate1, tmp0, tmp1;
-	uint4 data = (uint4)(input[4].x, input[4].y, input[4].z, gid);
+	uint4 data = (uint4)(input[4].x, input[4].y, input[4].z, get_global_id(0));
 	uint4 pad0 = midstate0, pad1 = midstate16;
 
-	SHA256(&pad0, &pad1, data, (uint4)(K[84],0,0,0), (uint4)(0,0,0,0), (uint4)(0,0,0, K[86]));
+	SHA256(&pad0, &pad1, data, (uint4)(K[84], 0U, 0U, 0U), (uint4)(0U, 0U, 0U, 0U), (uint4)(0U, 0U, 0U, K[86]));
 	SHA256_fresh(&ostate0, &ostate1, pad0^ K[82], pad1^ K[82], K[82], K[82]);
 	SHA256_fresh(&tstate0, &tstate1, pad0^ K[83], pad1^ K[83], K[83], K[83]);
 
 	tmp0 = tstate0;
 	tmp1 = tstate1;
-	SHA256(&tstate0, &tstate1, input[0],input[1],input[2],input[3]);
+	SHA256(&tstate0, &tstate1, input[0], input[1], input[2], input[3]);
 
 #pragma unroll 4
 	for (uint i=0; i<4; ++i) 
@@ -695,14 +700,16 @@ const uint4 midstate0, const uint4 midstate16, const uint target, const uint nFa
 		SHA256(&X[rotl(i, 1U)], &X[rotl(i, 1U)+1], pad0, pad1, (uint4)(K[84], 0U, 0U, 0U), (uint4)(0U, 0U, 0U, K[88]));
 	}
 
-	scrypt_core(gid, X, padcache, nFactor);
+	scrypt_core(X, padcache, nFactor);
 
 	SHA256(&tmp0,&tmp1, X[0], X[1], X[2], X[3]);
 	SHA256(&tmp0,&tmp1, X[4], X[5], X[6], X[7]);
 	SHA256_fixed(&tmp0, &tmp1);
 	SHA256(&ostate0, &ostate1, tmp0, tmp1, (uint4)(K[84], 0U, 0U, 0U), (uint4)(0U, 0U, 0U, K[88]));
 
-	if (EndianSwap(ostate1.w) <= target)
-		SETFOUND(gid);
+	bool found = EndianSwap(ostate1.w) <= target;
+    barrier(CLK_GLOBAL_MEM_FENCE); 
+    if (found)
+		SETFOUND(get_global_id(0));
 }
 
