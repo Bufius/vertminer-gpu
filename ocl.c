@@ -813,6 +813,7 @@ built:
 
 #ifdef USE_SCRYPT
 	if (opt_scrypt || opt_nscrypt) {
+		// FIXME - need to calculate bsize to reflect current nfactor
 		cl_uint bsize = opt_nscrypt ? 2048 : 1024;
 		//applog(LOG_DEBUG, "++++++++ BSIZE: %d", bsize);
 		size_t ipt = (bsize / cgpu->lookup_gap + (bsize % cgpu->lookup_gap > 0));
@@ -821,11 +822,12 @@ built:
 		/* Use the max alloc value which has been rounded to a power of
 		 * 2 greater >= required amount earlier */
 		if (bufsize > cgpu->max_alloc) {
-			applog(LOG_WARNING, "Maximum buffer memory device %d supports says %lu",
-						gpu, (long unsigned int)(cgpu->max_alloc));
-			applog(LOG_WARNING, "Your scrypt settings come to %d", (int)bufsize);
+			applog(LOG_WARNING, "Maximum buffer memory device %d supports says %luMB",
+				gpu, (long unsigned int)(cgpu->max_alloc/1048576));
+			unsigned int maxTC = cgpu->max_alloc/(128 * ipt);
+			applog(LOG_WARNING, "Your scrypt settings come to %luMB - maximum TC is %u", (long unsigned int)(bufsize/1048576), maxTC);
 		}
-		applog(LOG_DEBUG, "Creating scrypt buffer sized %d", (int)bufsize);
+		applog(LOG_DEBUG, "Creating scrypt buffer sized %luMB", (long unsigned int)(bufsize/1048576));
 		clState->padbufsize = bufsize;
 
 		/* This buffer is weird and might work to some degree even if
